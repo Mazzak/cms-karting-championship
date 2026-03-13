@@ -1,9 +1,9 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { supabaseBrowser } from "@/lib/supabase-browser";
 
 const router = useRouter();
 const [authChecked, setAuthChecked] = useState(false);
