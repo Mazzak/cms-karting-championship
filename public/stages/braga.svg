@@ -1,0 +1,21 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="900" fill="url(#sky)"/>
+  <rect y="560" width="1200" height="340" fill="url(#ground)"/>
+  <path d="M62 792C210 652 398 585 634 598C848 610 1027 560 1162 421" stroke="#1D2635" stroke-width="128" stroke-linecap="round"/>
+  <path d="M90 792C232 662 410 610 630 622C846 634 1012 588 1133 468" stroke="#DCE3EB" stroke-opacity="0.88" stroke-width="6" stroke-linecap="round" stroke-dasharray="18 22"/>
+  <rect x="782" y="120" width="232" height="94" rx="18" fill="#0F172A" fill-opacity="0.68"/>
+  <text x="812" y="175" fill="white" font-family="Segoe UI, Arial, sans-serif" font-size="42" font-weight="800">BRAGA</text>
+  <path d="M86 194L144 142L202 194V270H86V194Z" fill="#163A7A"/>
+  <path d="M208 162H286V270H208V162Z" fill="#234D92"/>
+  <path d="M312 182H394V270H312V182Z" fill="#163A7A"/>
+  <defs>
+    <linearGradient id="sky" x1="164" y1="66" x2="1032" y2="480" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#62B0FF"/>
+      <stop offset="1" stop-color="#0A4B8F"/>
+    </linearGradient>
+    <linearGradient id="ground" x1="600" y1="560" x2="600" y2="900" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#315C3D"/>
+      <stop offset="1" stop-color="#0E2014"/>
+    </linearGradient>
+  </defs>
+</svg>

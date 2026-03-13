@@ -1,0 +1,22 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="900" fill="url(#bg)"/>
+  <rect y="530" width="1200" height="370" fill="url(#land)"/>
+  <path d="M108 778C272 666 464 617 640 636C817 654 963 613 1095 492" stroke="#1A2230" stroke-width="138" stroke-linecap="round"/>
+  <path d="M135 778C285 679 469 640 642 658C813 676 945 639 1066 535" stroke="#F3F4F6" stroke-opacity="0.84" stroke-width="6" stroke-linecap="round" stroke-dasharray="20 22"/>
+  <circle cx="260" cy="228" r="118" fill="#F59E0B" fill-opacity="0.18"/>
+  <rect x="772" y="118" width="268" height="94" rx="18" fill="#0F172A" fill-opacity="0.68"/>
+  <text x="805" y="175" fill="white" font-family="Segoe UI, Arial, sans-serif" font-size="42" font-weight="800">BALTAR</text>
+  <path d="M164 474H334L390 530H108L164 474Z" fill="#334155"/>
+  <rect x="172" y="394" width="118" height="80" fill="#475569"/>
+  <rect x="302" y="362" width="74" height="112" fill="#64748B"/>
+  <defs>
+    <linearGradient id="bg" x1="600" y1="0" x2="600" y2="530" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FDBA74"/>
+      <stop offset="1" stop-color="#C2410C"/>
+    </linearGradient>
+    <linearGradient id="land" x1="600" y1="530" x2="600" y2="900" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6B7280"/>
+      <stop offset="1" stop-color="#1F2937"/>
+    </linearGradient>
+  </defs>
+</svg>

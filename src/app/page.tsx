@@ -1,4 +1,14 @@
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
+
+export const dynamic = "force-dynamic";
+
+type StageStatus =
+  | "draft"
+  | "scheduled"
+  | "postponed"
+  | "completed"
+  | "cancelled";
 
 type Stage = {
   id: string;
@@ -6,7 +16,7 @@ type Stage = {
   name: string;
   city: string | null;
   stage_date: string;
-  status: "draft" | "scheduled" | "completed" | "cancelled";
+  status: StageStatus;
   tracks?: {
     name: string;
     google_maps_url: string | null;
@@ -33,10 +43,12 @@ function formatDate(date: string) {
   }).format(new Date(date));
 }
 
-function getStatusLabel(status: Stage["status"]) {
+function getStatusLabel(status: StageStatus) {
   switch (status) {
     case "scheduled":
       return "Agendada";
+    case "postponed":
+      return "Adiada";
     case "completed":
       return "Concluída";
     case "cancelled":
@@ -46,17 +58,46 @@ function getStatusLabel(status: Stage["status"]) {
   }
 }
 
-function getStatusClass(status: Stage["status"]) {
+function getStatusClass(status: StageStatus) {
   switch (status) {
     case "scheduled":
       return "border-orange-400/20 bg-orange-500/10 text-orange-300";
+    case "postponed":
+      return "border-amber-400/30 bg-amber-500/15 text-amber-200";
     case "completed":
       return "border-emerald-400/20 bg-emerald-500/10 text-emerald-300";
     case "cancelled":
-      return "border-red-400/20 bg-red-500/10 text-red-300";
+      return "border-red-400/30 bg-red-500/15 text-red-200";
     default:
       return "border-slate-400/20 bg-slate-500/10 text-slate-300";
   }
+}
+
+function normalizeStageText(value: string | null | undefined) {
+  return (value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function getStageArtwork(stage: Stage) {
+  const haystack = `${normalizeStageText(stage.name)} ${normalizeStageText(stage.city)}`;
+
+  if (haystack.includes("braga")) return "/stages/braga.svg";
+  if (haystack.includes("baltar")) return "/stages/baltar.svg";
+  if (haystack.includes("cabo") || haystack.includes("matosinhos")) {
+    return "/stages/cabo-do-mundo.svg";
+  }
+  if (haystack.includes("viana")) return "/stages/viana.svg";
+
+  const fallback = [
+    "/stages/braga.svg",
+    "/stages/baltar.svg",
+    "/stages/cabo-do-mundo.svg",
+    "/stages/viana.svg",
+  ];
+
+  return fallback[(stage.round_number - 1) % fallback.length];
 }
 
 function getMapsLink(stage: Stage) {
@@ -106,6 +147,7 @@ export default async function Page() {
         )
       `)
       .eq("championship_id", championship.id)
+      .eq("is_public", true)
       .order("round_number", { ascending: true }),
     supabase
       .from("championship_standings")
@@ -120,16 +162,19 @@ export default async function Page() {
   const typedStandings: Standing[] = (standings ?? []) as Standing[];
 
   const nextStage =
-    typedStages.find((stage) => stage.status === "scheduled") ?? typedStages[0];
+    typedStages.find((stage) => stage.status === "scheduled") ??
+    typedStages.find((stage) => stage.status === "postponed") ??
+    typedStages[0];
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       <section className="relative overflow-hidden border-b border-white/10 bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.2),_transparent_38%),linear-gradient(135deg,rgba(15,23,42,0.92),rgba(15,23,42,0.72))]" />
         <div className="absolute inset-0 opacity-20">
           <div className="absolute -left-20 top-8 h-72 w-72 rounded-full bg-orange-500 blur-3xl" />
           <div className="absolute right-0 top-0 h-96 w-96 rounded-full bg-blue-500 blur-3xl" />
         </div>
-    
+
         <div className="relative mx-auto max-w-7xl px-6 py-16 md:px-10 md:py-24">
           <div className="grid items-center gap-10 lg:grid-cols-[1.15fr_0.85fr]">
             <div>
@@ -159,7 +204,7 @@ export default async function Page() {
                 >
                   Ver etapas
                 </a>
-                 <a
+                <a
                   href="/admin"
                   className="rounded-2xl border border-orange-400/30 bg-orange-500/10 px-6 py-3 text-sm font-semibold text-orange-300 transition hover:bg-orange-500/20"
                 >
@@ -191,10 +236,23 @@ export default async function Page() {
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-white/10 bg-white/5 p-5 shadow-2xl backdrop-blur">
+            <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 shadow-2xl backdrop-blur">
+              {nextStage && (
+                <div className="absolute inset-x-5 top-5 h-40 overflow-hidden rounded-3xl border border-white/10">
+                  <Image
+                    src={getStageArtwork(nextStage)}
+                    alt={nextStage.name}
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 40vw"
+                    className="object-cover opacity-55"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/65 to-slate-950/10" />
+                </div>
+              )}
+
               {nextStage ? (
                 <>
-                  <div className="mb-5 flex items-start justify-between gap-4">
+                  <div className="relative mb-5 mt-36 flex items-start justify-between gap-4">
                     <div>
                       <p className="text-sm uppercase tracking-[0.2em] text-slate-400">
                         Próxima etapa
@@ -286,8 +344,8 @@ export default async function Page() {
             </h2>
           </div>
           <p className="max-w-2xl text-slate-400">
-            As etapas são carregadas directamente do Supabase e reflectem o
-            estado real do campeonato.
+            As etapas são carregadas diretamente do Supabase e refletem o estado
+            real do campeonato.
           </p>
         </div>
 
@@ -295,7 +353,7 @@ export default async function Page() {
           {typedStages.map((stage) => (
             <div
               key={stage.id}
-              className="rounded-[28px] border border-white/10 bg-gradient-to-b from-white/10 to-white/5 p-5 transition hover:-translate-y-1 hover:border-orange-400/40"
+              className="overflow-hidden rounded-[28px] border border-white/10 bg-gradient-to-b from-white/10 to-white/5 p-5 transition hover:-translate-y-1 hover:border-orange-400/40"
             >
               <div className="mb-5 flex items-center justify-between">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500 text-lg font-black text-white">
@@ -310,7 +368,19 @@ export default async function Page() {
                 </span>
               </div>
 
-              <div className="aspect-[4/3] rounded-2xl bg-gradient-to-br from-blue-900 via-slate-800 to-orange-500/30" />
+              <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-white/10">
+                <Image
+                  src={getStageArtwork(stage)}
+                  alt={stage.name}
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 25vw"
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/35 to-transparent" />
+                <div className="absolute left-4 top-4 rounded-full border border-white/15 bg-slate-950/70 px-3 py-1 text-xs font-semibold text-slate-100 backdrop-blur">
+                  {stage.city || "Circuito"}
+                </div>
+              </div>
 
               <h3 className="mt-5 text-xl font-bold leading-tight">
                 {stage.name}

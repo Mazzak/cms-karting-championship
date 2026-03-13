@@ -1,0 +1,20 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="900" fill="url(#sky)"/>
+  <rect y="590" width="1200" height="310" fill="url(#sand)"/>
+  <rect y="450" width="1200" height="150" fill="#1D4ED8" fill-opacity="0.5"/>
+  <path d="M94 785C248 646 436 578 663 594C849 607 1017 553 1143 420" stroke="#182231" stroke-width="126" stroke-linecap="round"/>
+  <path d="M120 785C266 657 446 601 660 617C843 631 997 583 1115 464" stroke="#E5E7EB" stroke-opacity="0.82" stroke-width="6" stroke-linecap="round" stroke-dasharray="18 22"/>
+  <rect x="704" y="110" width="386" height="96" rx="18" fill="#0F172A" fill-opacity="0.68"/>
+  <text x="734" y="170" fill="white" font-family="Segoe UI, Arial, sans-serif" font-size="40" font-weight="800">CABO DO MUNDO</text>
+  <circle cx="216" cy="188" r="68" fill="#F8FAFC" fill-opacity="0.9"/>
+  <defs>
+    <linearGradient id="sky" x1="600" y1="0" x2="600" y2="450" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7DD3FC"/>
+      <stop offset="1" stop-color="#2563EB"/>
+    </linearGradient>
+    <linearGradient id="sand" x1="600" y1="590" x2="600" y2="900" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F59E0B"/>
+      <stop offset="1" stop-color="#7C2D12"/>
+    </linearGradient>
+  </defs>
+</svg>

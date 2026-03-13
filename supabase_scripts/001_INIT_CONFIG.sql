@@ -112,7 +112,7 @@ create table if not exists public.stages (
   check_in_time time,
   briefing_time time,
   race_time time,
-  status text not null default 'draft' check (status in ('draft','scheduled','completed','cancelled')),
+  status text not null default 'draft' check (status in ('draft','scheduled','postponed','completed','cancelled')),
   is_public boolean not null default true,
   notes text,
   created_at timestamptz not null default now(),

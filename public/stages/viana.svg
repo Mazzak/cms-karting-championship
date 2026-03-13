@@ -1,0 +1,21 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="900" fill="url(#sky)"/>
+  <rect y="566" width="1200" height="334" fill="url(#land)"/>
+  <path d="M108 790C252 670 444 626 672 642C865 654 1017 604 1110 485" stroke="#18202D" stroke-width="134" stroke-linecap="round"/>
+  <path d="M134 790C270 684 453 650 669 664C857 677 990 634 1082 528" stroke="#E2E8F0" stroke-opacity="0.86" stroke-width="6" stroke-linecap="round" stroke-dasharray="18 22"/>
+  <path d="M92 312L148 236L204 312H92Z" fill="#F8FAFC" fill-opacity="0.85"/>
+  <path d="M174 312L236 214L298 312H174Z" fill="#E2E8F0" fill-opacity="0.9"/>
+  <path d="M252 312L326 198L400 312H252Z" fill="#CBD5E1" fill-opacity="0.92"/>
+  <rect x="748" y="116" width="330" height="94" rx="18" fill="#0F172A" fill-opacity="0.68"/>
+  <text x="780" y="175" fill="white" font-family="Segoe UI, Arial, sans-serif" font-size="42" font-weight="800">VIANA</text>
+  <defs>
+    <linearGradient id="sky" x1="600" y1="0" x2="600" y2="566" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#93C5FD"/>
+      <stop offset="1" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <linearGradient id="land" x1="600" y1="566" x2="600" y2="900" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4D7C0F"/>
+      <stop offset="1" stop-color="#1A2E05"/>
+    </linearGradient>
+  </defs>
+</svg>

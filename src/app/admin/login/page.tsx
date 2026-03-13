@@ -33,7 +33,7 @@ type Stage = {
   check_in_time: string | null;
   briefing_time: string | null;
   race_time: string | null;
-  status: "draft" | "scheduled" | "completed" | "cancelled";
+  status: "draft" | "scheduled" | "postponed" | "completed" | "cancelled";
 };
 
 type ResultRow = {
@@ -58,6 +58,8 @@ function getStatusLabel(status: Stage["status"]) {
   switch (status) {
     case "scheduled":
       return "Agendada";
+    case "postponed":
+      return "Adiada";
     case "completed":
       return "Concluída";
     case "cancelled":
@@ -71,6 +73,8 @@ function getStatusClass(status: Stage["status"]) {
   switch (status) {
     case "scheduled":
       return "border-orange-400/20 bg-orange-500/10 text-orange-300";
+    case "postponed":
+      return "border-amber-400/30 bg-amber-500/15 text-amber-200";
     case "completed":
       return "border-emerald-400/20 bg-emerald-500/10 text-emerald-300";
     case "cancelled":
@@ -1109,6 +1113,7 @@ export default function AdminPage() {
                             [
                               "draft",
                               "scheduled",
+                              "postponed",
                               "completed",
                               "cancelled",
                             ] as Stage["status"][]
