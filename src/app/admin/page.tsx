@@ -2,17 +2,10 @@
 
 export const dynamic = "force-dynamic";
 
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
-export default function AdminPage() {
-
-  const router = useRouter();
-
-  const [authChecked, setAuthChecked] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-}
 type Championship = {
   id: string;
   name: string;
@@ -84,6 +77,11 @@ function getStatusClass(status: Stage["status"]) {
 }
 
 export default function AdminPage() {
+  const router = useRouter();
+
+  const [authChecked, setAuthChecked] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
   const [championship, setChampionship] = useState<Championship | null>(null);
   const [pilots, setPilots] = useState<Pilot[]>([]);
   const [stages, setStages] = useState<Stage[]>([]);
@@ -123,34 +121,34 @@ export default function AdminPage() {
   const championshipSlug =
     process.env.NEXT_PUBLIC_CHAMPIONSHIP_SLUG ?? "cms-karting-championship-2026";
 
-useEffect(() => {
-  async function checkAdmin() {
-    const {
-      data: { user },
-    } = await supabaseBrowser.auth.getUser();
+  useEffect(() => {
+    async function checkAdmin() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-    if (!user) {
-      router.push("/admin/login");
-      return;
+      if (!user) {
+        router.push("/");
+        return;
+      }
+
+      const { data: profile, error } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
+      if (error || !profile || profile.role !== "admin") {
+        router.push("/");
+        return;
+      }
+
+      setIsAdmin(true);
+      setAuthChecked(true);
     }
 
-    const { data: profile, error } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (error || !profile || profile.role !== "admin") {
-      router.push("/");
-      return;
-    }
-
-    setIsAdmin(true);
-    setAuthChecked(true);
-  }
-
-  checkAdmin();
-}, [router]);
+    checkAdmin();
+  }, [router]);
 
   async function loadData() {
     setLoading(true);
@@ -179,7 +177,7 @@ useEffect(() => {
         .from("pilots")
         .select("id, full_name, kart_number, team_name, is_active")
         .eq("championship_id", championshipData.id)
-        .order("kart_number", { ascending: true }),
+        .order("full_name", { ascending: true }),
       supabase
         .from("stages")
         .select(
@@ -207,11 +205,11 @@ useEffect(() => {
     setLoading(false);
   }
 
-useEffect(() => {
-  if (authChecked && isAdmin) {
-    loadData();
-  }
-}, [authChecked, isAdmin]);
+  useEffect(() => {
+    if (authChecked && isAdmin) {
+      loadData();
+    }
+  }, [authChecked, isAdmin]);
 
   const pilotMap = useMemo(() => {
     return new Map(pilots.map((pilot) => [pilot.id, pilot]));
@@ -356,10 +354,7 @@ useEffect(() => {
     setBusyKey(null);
   }
 
-  async function updateStageStatus(
-    stageId: string,
-    status: Stage["status"]
-  ) {
+  async function updateStageStatus(stageId: string, status: Stage["status"]) {
     setBusyKey(`stage-${stageId}`);
     setMessage(null);
     setErrorMessage(null);
@@ -404,6 +399,20 @@ useEffect(() => {
     setBusyKey(null);
   }
 
+  if (!authChecked) {
+    return (
+      <main className="min-h-screen bg-slate-950 px-6 py-20 text-white">
+        <div className="mx-auto max-w-4xl rounded-3xl border border-white/10 bg-white/5 p-8">
+          A validar permissões...
+        </div>
+      </main>
+    );
+  }
+
+  if (!isAdmin) {
+    return null;
+  }
+
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       <section className="relative overflow-hidden border-b border-white/10 bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950">
@@ -438,24 +447,33 @@ useEffect(() => {
               )}
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
-                <div className="text-2xl font-black text-orange-300">
-                  {pilots.length}
+            <div className="flex flex-col items-stretch gap-3 sm:flex-row">
+              <a
+                href="/"
+                className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 font-semibold text-white transition hover:bg-white/10"
+              >
+                Voltar à homepage
+              </a>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
+                  <div className="text-2xl font-black text-orange-300">
+                    {pilots.length}
+                  </div>
+                  <div className="text-sm text-slate-400">Pilotos</div>
                 </div>
-                <div className="text-sm text-slate-400">Pilotos</div>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
-                <div className="text-2xl font-black text-orange-300">
-                  {stages.length}
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
+                  <div className="text-2xl font-black text-orange-300">
+                    {stages.length}
+                  </div>
+                  <div className="text-sm text-slate-400">Etapas</div>
                 </div>
-                <div className="text-sm text-slate-400">Etapas</div>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
-                <div className="text-2xl font-black text-orange-300">
-                  {results.length}
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
+                  <div className="text-2xl font-black text-orange-300">
+                    {results.length}
+                  </div>
+                  <div className="text-sm text-slate-400">Resultados</div>
                 </div>
-                <div className="text-sm text-slate-400">Resultados</div>
               </div>
             </div>
           </div>
@@ -516,7 +534,7 @@ useEffect(() => {
                         kart_number: e.target.value,
                       }))
                     }
-                    placeholder="Número do kart"
+                    placeholder="Número do kart (opcional)"
                     type="number"
                     className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 outline-none placeholder:text-slate-500 focus:border-orange-400/40"
                   />
@@ -714,7 +732,7 @@ useEffect(() => {
                       .filter((pilot) => pilot.is_active)
                       .map((pilot) => (
                         <option key={pilot.id} value={pilot.id}>
-                          #{pilot.kart_number ?? "—"} · {pilot.full_name}
+                          {pilot.full_name}
                         </option>
                       ))}
                   </select>
@@ -790,11 +808,10 @@ useEffect(() => {
                         className="flex items-center justify-between gap-4 px-6 py-4"
                       >
                         <div>
-                          <p className="font-semibold">
-                            #{pilot.kart_number ?? "—"} · {pilot.full_name}
-                          </p>
+                          <p className="font-semibold">{pilot.full_name}</p>
                           <p className="text-sm text-slate-400">
                             {pilot.team_name}
+                            {pilot.kart_number ? ` · #${pilot.kart_number}` : ""}
                           </p>
                         </div>
 
