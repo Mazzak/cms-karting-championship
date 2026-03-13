@@ -460,6 +460,33 @@ export default function AdminPage() {
     setBusyKey(null);
   }
 
+  async function deleteStage(stageId: string) {
+    const confirmed = window.confirm(
+      "Tens a certeza que queres apagar esta etapa? Isto também remove todos os resultados associados."
+    );
+
+    if (!confirmed) return;
+
+    setBusyKey(`stage-delete-${stageId}`);
+    setMessage(null);
+    setErrorMessage(null);
+
+    const { error } = await supabase
+      .from("stages")
+      .delete()
+      .eq("id", stageId);
+
+    if (error) {
+      setErrorMessage(`Erro ao apagar etapa: ${error.message}`);
+      setBusyKey(null);
+      return;
+    }
+
+    setMessage("Etapa apagada com sucesso.");
+    await loadData();
+    setBusyKey(null);
+  }
+
   async function deleteResult(resultId: string) {
     const confirmed = window.confirm(
       "Tens a certeza que queres apagar este resultado?"
@@ -1091,6 +1118,7 @@ export default function AdminPage() {
                               onClick={() => updateStageStatus(stage.id, status)}
                               disabled={
                                 busyKey === `stage-${stage.id}` ||
+                                busyKey === `stage-delete-${stage.id}` ||
                                 stage.status === status
                               }
                               className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition ${
@@ -1105,6 +1133,19 @@ export default function AdminPage() {
                                 : getStatusLabel(status)}
                             </button>
                           ))}
+
+                          <button
+                            onClick={() => deleteStage(stage.id)}
+                            disabled={
+                              busyKey === `stage-delete-${stage.id}` ||
+                              busyKey === `stage-${stage.id}`
+                            }
+                            className="rounded-xl border border-red-400/20 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-300 transition hover:bg-red-500/20 disabled:opacity-50"
+                          >
+                            {busyKey === `stage-delete-${stage.id}`
+                              ? "A apagar..."
+                              : "Apagar etapa"}
+                          </button>
                         </div>
                       </div>
                     ))
