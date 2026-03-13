@@ -219,7 +219,7 @@ export default function AdminPage() {
     return new Map(stages.map((stage) => [stage.id, stage]));
   }, [stages]);
 
-    async function resetChampionship() {
+  async function resetChampionship() {
     const confirmed = window.confirm(
       "Tens a certeza que queres apagar todas as etapas e todos os resultados do campeonato? Esta acção não pode ser desfeita."
     );
@@ -321,7 +321,7 @@ export default function AdminPage() {
     await loadData();
     setSaving(false);
   }
-  
+
   async function handleCreateResult(e: FormEvent) {
     e.preventDefault();
 
@@ -402,7 +402,7 @@ export default function AdminPage() {
     setBusyKey(null);
   }
 
-    async function deleteStage(stageId: string) {
+  async function deleteStage(stageId: string) {
     const confirmed = window.confirm(
       "Tens a certeza que queres apagar esta etapa? Isto também remove todos os resultados associados."
     );
@@ -501,23 +501,23 @@ export default function AdminPage() {
               )}
             </div>
 
-             <div className="flex flex-col items-stretch gap-3 sm:flex-row">
-             <a
-               href="/"
-               className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 font-semibold text-white transition hover:bg-white/10"
-             >
-               HOMEPAGE
-             </a>
-           
-             <button
-               onClick={resetChampionship}
-               disabled={busyKey === "championship-reset"}
-               className="rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 font-semibold text-red-300 transition hover:bg-red-500/20 disabled:opacity-50"
-             >
-               {busyKey === "championship-reset"
-                 ? "A reiniciar..."
-                 : "Reset campeonato"}
-             </button>
+            <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-start">
+              <a
+                href="/"
+                className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 font-semibold text-white transition hover:bg-white/10"
+              >
+                HOMEPAGE
+              </a>
+
+              <button
+                onClick={resetChampionship}
+                disabled={busyKey === "championship-reset"}
+                className="rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 font-semibold text-red-300 transition hover:bg-red-500/20 disabled:opacity-50"
+              >
+                {busyKey === "championship-reset"
+                  ? "A reiniciar..."
+                  : "Reset campeonato"}
+              </button>
 
               <div className="grid grid-cols-3 gap-3">
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
@@ -944,48 +944,50 @@ export default function AdminPage() {
                             {getStatusLabel(stage.status)}
                           </span>
                         </div>
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        {(
-                          [
-                            "draft",
-                            "scheduled",
-                            "completed",
-                            "cancelled",
-                          ] as Stage["status"][]
-                        ).map((status) => (
+
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          {(
+                            [
+                              "draft",
+                              "scheduled",
+                              "completed",
+                              "cancelled",
+                            ] as Stage["status"][]
+                          ).map((status) => (
+                            <button
+                              key={status}
+                              onClick={() => updateStageStatus(stage.id, status)}
+                              disabled={
+                                busyKey === `stage-${stage.id}` ||
+                                busyKey === `stage-delete-${stage.id}` ||
+                                stage.status === status
+                              }
+                              className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition ${
+                                stage.status === status
+                                  ? "bg-orange-500 text-white"
+                                  : "border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"
+                              } disabled:opacity-50`}
+                            >
+                              {busyKey === `stage-${stage.id}` &&
+                              stage.status !== status
+                                ? "A guardar..."
+                                : getStatusLabel(status)}
+                            </button>
+                          ))}
+
                           <button
-                            key={status}
-                            onClick={() => updateStageStatus(stage.id, status)}
+                            onClick={() => deleteStage(stage.id)}
                             disabled={
-                              busyKey === `stage-${stage.id}` ||
                               busyKey === `stage-delete-${stage.id}` ||
-                              stage.status === status
+                              busyKey === `stage-${stage.id}`
                             }
-                            className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition ${
-                              stage.status === status
-                                ? "bg-orange-500 text-white"
-                                : "border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"
-                            } disabled:opacity-50`}
+                            className="rounded-xl border border-red-400/20 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-300 transition hover:bg-red-500/20 disabled:opacity-50"
                           >
-                            {busyKey === `stage-${stage.id}` && stage.status !== status
-                              ? "A guardar..."
-                              : getStatusLabel(status)}
+                            {busyKey === `stage-delete-${stage.id}`
+                              ? "A apagar..."
+                              : "Apagar etapa"}
                           </button>
-                        ))}
-                      
-                        <button
-                          onClick={() => deleteStage(stage.id)}
-                          disabled={
-                            busyKey === `stage-delete-${stage.id}` ||
-                            busyKey === `stage-${stage.id}`
-                          }
-                          className="rounded-xl border border-red-400/20 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-300 transition hover:bg-red-500/20 disabled:opacity-50"
-                        >
-                          {busyKey === `stage-delete-${stage.id}`
-                            ? "A apagar..."
-                            : "Apagar etapa"}
-                        </button>
-                      </div>
+                        </div>
                       </div>
                     ))
                   )}
