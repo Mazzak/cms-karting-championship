@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { StageSection } from "@/components/stage-section";
 import { supabase } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +34,23 @@ type Standing = {
   wins: number;
   podiums: number;
   standing_position: number;
+};
+
+type Pilot = {
+  id: string;
+  full_name: string;
+  kart_number: number | null;
+  team_name: string;
+};
+
+type StageResultRow = {
+  id: string;
+  stage_id: string;
+  pilot_id: string;
+  finish_position: number;
+  pole_position: boolean;
+  fastest_lap: boolean;
+  total_points: number;
 };
 
 function formatDate(date: string) {
@@ -130,7 +148,8 @@ export default async function Page() {
     );
   }
 
-  const [{ data: stages }, { data: standings }] = await Promise.all([
+  const [{ data: stages }, { data: standings }, { data: pilots }, { data: results }] =
+    await Promise.all([
     supabase
       .from("stages")
       .select(`
@@ -156,10 +175,42 @@ export default async function Page() {
       )
       .eq("championship_id", championship.id)
       .order("standing_position", { ascending: true }),
+    supabase
+      .from("pilots")
+      .select("id, full_name, kart_number, team_name")
+      .eq("championship_id", championship.id),
+    supabase
+      .from("results")
+      .select(
+        "id, stage_id, pilot_id, finish_position, pole_position, fastest_lap, total_points"
+      )
+      .order("finish_position", { ascending: true }),
   ]);
 
   const typedStages: Stage[] = (stages ?? []) as unknown as Stage[];
   const typedStandings: Standing[] = (standings ?? []) as Standing[];
+  const typedPilots: Pilot[] = (pilots ?? []) as Pilot[];
+  const typedResults: StageResultRow[] = (results ?? []) as StageResultRow[];
+
+  const pilotMap = new Map(typedPilots.map((pilot) => [pilot.id, pilot]));
+  const stageResults = typedResults
+    .map((result) => {
+      const pilot = pilotMap.get(result.pilot_id);
+      if (!pilot) return null;
+
+      return {
+        id: result.id,
+        stage_id: result.stage_id,
+        finish_position: result.finish_position,
+        pole_position: result.pole_position,
+        fastest_lap: result.fastest_lap,
+        total_points: result.total_points,
+        full_name: pilot.full_name,
+        kart_number: pilot.kart_number,
+        team_name: pilot.team_name,
+      };
+    })
+    .filter((result) => result !== null);
 
   const nextStage =
     typedStages.find((stage) => stage.status === "scheduled") ??
@@ -333,88 +384,10 @@ export default async function Page() {
         </div>
       </section>
 
-      <section id="etapas" className="mx-auto max-w-7xl px-6 py-16 md:px-10">
-        <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-orange-400">
-              Calendário
-            </p>
-            <h2 className="mt-2 text-3xl font-black md:text-4xl">
-              Etapas do campeonato
-            </h2>
-          </div>
-          <p className="max-w-2xl text-slate-400">
-            As etapas são carregadas diretamente do Supabase e refletem o estado
-            real do campeonato.
-          </p>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-          {typedStages.map((stage) => (
-            <div
-              key={stage.id}
-              className="overflow-hidden rounded-[28px] border border-white/10 bg-gradient-to-b from-white/10 to-white/5 p-5 transition hover:-translate-y-1 hover:border-orange-400/40"
-            >
-              <div className="mb-5 flex items-center justify-between">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500 text-lg font-black text-white">
-                  {stage.round_number}
-                </div>
-                <span
-                  className={`rounded-full border px-3 py-1 text-xs ${getStatusClass(
-                    stage.status
-                  )}`}
-                >
-                  {getStatusLabel(stage.status)}
-                </span>
-              </div>
-
-              <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-white/10">
-                <Image
-                  src={getStageArtwork(stage)}
-                  alt={stage.name}
-                  fill
-                  sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 25vw"
-                  className="object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/35 to-transparent" />
-                <div className="absolute left-4 top-4 rounded-full border border-white/15 bg-slate-950/70 px-3 py-1 text-xs font-semibold text-slate-100 backdrop-blur">
-                  {stage.city || "Circuito"}
-                </div>
-              </div>
-
-              <h3 className="mt-5 text-xl font-bold leading-tight">
-                {stage.name}
-              </h3>
-              <p className="mt-2 text-sm text-slate-400">{stage.city || "—"}</p>
-              <p className="mt-1 text-sm text-slate-500">
-                {formatDate(stage.stage_date)}
-              </p>
-
-              <div className="mt-5 flex flex-wrap gap-3">
-                <a
-                  href={getMapsLink(stage)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="rounded-2xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:scale-[1.02]"
-                >
-                  Ver direções
-                </a>
-
-                {stage.tracks?.website_url && (
-                  <a
-                    href={stage.tracks.website_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-2xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
-                  >
-                    Website
-                  </a>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      <StageSection
+        stages={typedStages}
+        stageResults={stageResults}
+      />
 
       <section
         id="classificacao"
