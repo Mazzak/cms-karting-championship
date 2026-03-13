@@ -2,13 +2,17 @@
 
 export const dynamic = "force-dynamic";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
-const router = useRouter();
-const [authChecked, setAuthChecked] = useState(false);
-const [isAdmin, setIsAdmin] = useState(false);
+export default function AdminPage() {
 
+  const router = useRouter();
+
+  const [authChecked, setAuthChecked] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+}
 type Championship = {
   id: string;
   name: string;
