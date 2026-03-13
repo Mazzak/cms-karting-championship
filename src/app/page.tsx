@@ -1,65 +1,432 @@
-import Image from "next/image";
+import { supabase } from "@/lib/supabase";
 
-export default function Home() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+type Stage = {
+  id: string;
+  round_number: number;
+  name: string;
+  city: string | null;
+  stage_date: string;
+  status: "draft" | "scheduled" | "completed" | "cancelled";
+  tracks?: {
+    name: string;
+    google_maps_url: string | null;
+    website_url?: string | null;
+  } | null;
+};
+
+type Standing = {
+  pilot_id: string;
+  full_name: string;
+  kart_number: number | null;
+  team_name: string;
+  total_points: number;
+  wins: number;
+  podiums: number;
+  standing_position: number;
+};
+
+function formatDate(date: string) {
+  return new Intl.DateTimeFormat("pt-PT", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  }).format(new Date(date));
+}
+
+function getStatusLabel(status: Stage["status"]) {
+  switch (status) {
+    case "scheduled":
+      return "Agendada";
+    case "completed":
+      return "Concluída";
+    case "cancelled":
+      return "Cancelada";
+    default:
+      return "Rascunho";
+  }
+}
+
+function getStatusClass(status: Stage["status"]) {
+  switch (status) {
+    case "scheduled":
+      return "border-orange-400/20 bg-orange-500/10 text-orange-300";
+    case "completed":
+      return "border-emerald-400/20 bg-emerald-500/10 text-emerald-300";
+    case "cancelled":
+      return "border-red-400/20 bg-red-500/10 text-red-300";
+    default:
+      return "border-slate-400/20 bg-slate-500/10 text-slate-300";
+  }
+}
+
+function getMapsLink(stage: Stage) {
+  const dbLink = stage.tracks?.google_maps_url;
+  if (dbLink) return dbLink;
+
+  const query = encodeURIComponent(stage.name);
+  return `https://www.google.com/maps/search/?api=1&query=${query}`;
+}
+
+export default async function Page() {
+  const championshipSlug = process.env.NEXT_PUBLIC_CHAMPIONSHIP_SLUG;
+
+  const { data: championship, error: championshipError } = await supabase
+    .from("championships")
+    .select("id, name, description")
+    .eq("slug", championshipSlug)
+    .single();
+
+  if (championshipError || !championship) {
+    return (
+      <main className="min-h-screen bg-slate-950 px-6 py-20 text-white">
+        <div className="mx-auto max-w-4xl rounded-3xl border border-red-400/20 bg-red-500/10 p-8">
+          <h1 className="text-3xl font-black">Erro a carregar campeonato</h1>
+          <p className="mt-3 text-slate-300">
+            Verifica o slug do campeonato e as variáveis do Supabase.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
       </main>
-    </div>
+    );
+  }
+
+  const [{ data: stages }, { data: standings }] = await Promise.all([
+    supabase
+      .from("stages")
+      .select(`
+        id,
+        round_number,
+        name,
+        city,
+        stage_date,
+        status,
+        tracks (
+          name,
+          google_maps_url,
+          website_url
+        )
+      `)
+      .eq("championship_id", championship.id)
+      .order("round_number", { ascending: true }),
+    supabase
+      .from("championship_standings")
+      .select(
+        "pilot_id, full_name, kart_number, team_name, total_points, wins, podiums, standing_position"
+      )
+      .eq("championship_id", championship.id)
+      .order("standing_position", { ascending: true }),
+  ]);
+
+  const typedStages: Stage[] = (stages ?? []) as unknown as Stage[];
+  const typedStandings: Standing[] = (standings ?? []) as Standing[];
+
+  const nextStage =
+    typedStages.find((stage) => stage.status === "scheduled") ?? typedStages[0];
+
+  return (
+    <main className="min-h-screen bg-slate-950 text-white">
+      <section className="relative overflow-hidden border-b border-white/10 bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950">
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute -left-20 top-8 h-72 w-72 rounded-full bg-orange-500 blur-3xl" />
+          <div className="absolute right-0 top-0 h-96 w-96 rounded-full bg-blue-500 blur-3xl" />
+        </div>
+    
+        <div className="relative mx-auto max-w-7xl px-6 py-16 md:px-10 md:py-24">
+          <div className="grid items-center gap-10 lg:grid-cols-[1.15fr_0.85fr]">
+            <div>
+              <div className="mb-4 inline-flex items-center rounded-full border border-orange-400/30 bg-orange-500/10 px-4 py-1 text-sm font-medium text-orange-300">
+                1.º Campeonato de Karting · CMS Edition
+              </div>
+
+              <h1 className="max-w-4xl text-4xl font-black leading-tight tracking-tight md:text-6xl">
+                {championship.name}
+              </h1>
+
+              <p className="mt-5 max-w-2xl text-base text-slate-300 md:text-lg">
+                {championship.description ||
+                  "Acompanha etapas, classificação geral e evolução do campeonato em tempo real."}
+              </p>
+
+              <div className="mt-8 flex flex-wrap gap-4">
+                <a
+                  href="#classificacao"
+                  className="rounded-2xl bg-orange-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-500/20 transition hover:scale-[1.02]"
+                >
+                  Ver classificação
+                </a>
+                <a
+                  href="#etapas"
+                  className="rounded-2xl border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+                >
+                  Ver etapas
+                </a>
+                 <a
+                  href="/admin"
+                  className="rounded-2xl border border-orange-400/30 bg-orange-500/10 px-6 py-3 text-sm font-semibold text-orange-300 transition hover:bg-orange-500/20"
+                >
+                  Admin Dashboard
+                </a>
+              </div>
+
+              <div className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-4">
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
+                  <div className="text-2xl font-black text-orange-400">
+                    {typedStages.length}
+                  </div>
+                  <div className="text-sm text-slate-300">Etapas</div>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
+                  <div className="text-2xl font-black text-orange-400">
+                    {typedStandings.length}
+                  </div>
+                  <div className="text-sm text-slate-300">Pilotos</div>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
+                  <div className="text-2xl font-black text-orange-400">25</div>
+                  <div className="text-sm text-slate-300">Pontos vitória</div>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
+                  <div className="text-2xl font-black text-orange-400">CMS</div>
+                  <div className="text-sm text-slate-300">Edition</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[28px] border border-white/10 bg-white/5 p-5 shadow-2xl backdrop-blur">
+              {nextStage ? (
+                <>
+                  <div className="mb-5 flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm uppercase tracking-[0.2em] text-slate-400">
+                        Próxima etapa
+                      </p>
+                      <h2 className="mt-2 text-3xl font-black">
+                        Etapa {nextStage.round_number}
+                      </h2>
+                    </div>
+                    <span
+                      className={`rounded-full border px-3 py-1 text-sm font-semibold ${getStatusClass(
+                        nextStage.status
+                      )}`}
+                    >
+                      {getStatusLabel(nextStage.status)}
+                    </span>
+                  </div>
+
+                  <div className="rounded-3xl bg-gradient-to-r from-orange-500 to-orange-400 p-[1px]">
+                    <div className="rounded-3xl bg-slate-950 p-6">
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div>
+                          <p className="text-sm text-slate-400">Circuito</p>
+                          <p className="mt-1 text-lg font-semibold">
+                            {nextStage.name}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-slate-400">Cidade</p>
+                          <p className="mt-1 text-lg font-semibold">
+                            {nextStage.city || "—"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-slate-400">Data</p>
+                          <p className="mt-1 text-lg font-semibold">
+                            {formatDate(nextStage.stage_date)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-slate-400">Formato</p>
+                          <p className="mt-1 text-lg font-semibold">
+                            Qualificação + Corrida
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-6 flex flex-wrap gap-3">
+                        <a
+                          href={getMapsLink(nextStage)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="rounded-2xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:scale-[1.02]"
+                        >
+                          Ver direções
+                        </a>
+
+                        {nextStage.tracks?.website_url && (
+                          <a
+                            href={nextStage.tracks.website_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="rounded-2xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
+                          >
+                            Website
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="rounded-3xl border border-white/10 bg-slate-950 p-6 text-slate-300">
+                  Ainda não existem etapas configuradas.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="etapas" className="mx-auto max-w-7xl px-6 py-16 md:px-10">
+        <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-orange-400">
+              Calendário
+            </p>
+            <h2 className="mt-2 text-3xl font-black md:text-4xl">
+              Etapas do campeonato
+            </h2>
+          </div>
+          <p className="max-w-2xl text-slate-400">
+            As etapas são carregadas directamente do Supabase e reflectem o
+            estado real do campeonato.
+          </p>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+          {typedStages.map((stage) => (
+            <div
+              key={stage.id}
+              className="rounded-[28px] border border-white/10 bg-gradient-to-b from-white/10 to-white/5 p-5 transition hover:-translate-y-1 hover:border-orange-400/40"
+            >
+              <div className="mb-5 flex items-center justify-between">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500 text-lg font-black text-white">
+                  {stage.round_number}
+                </div>
+                <span
+                  className={`rounded-full border px-3 py-1 text-xs ${getStatusClass(
+                    stage.status
+                  )}`}
+                >
+                  {getStatusLabel(stage.status)}
+                </span>
+              </div>
+
+              <div className="aspect-[4/3] rounded-2xl bg-gradient-to-br from-blue-900 via-slate-800 to-orange-500/30" />
+
+              <h3 className="mt-5 text-xl font-bold leading-tight">
+                {stage.name}
+              </h3>
+              <p className="mt-2 text-sm text-slate-400">{stage.city || "—"}</p>
+              <p className="mt-1 text-sm text-slate-500">
+                {formatDate(stage.stage_date)}
+              </p>
+
+              <div className="mt-5 flex flex-wrap gap-3">
+                <a
+                  href={getMapsLink(stage)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-2xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:scale-[1.02]"
+                >
+                  Ver direções
+                </a>
+
+                {stage.tracks?.website_url && (
+                  <a
+                    href={stage.tracks.website_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-2xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
+                  >
+                    Website
+                  </a>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section
+        id="classificacao"
+        className="border-y border-white/10 bg-white/5"
+      >
+        <div className="mx-auto max-w-7xl px-6 py-16 md:px-10">
+          <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-sm uppercase tracking-[0.2em] text-orange-400">
+                Standings
+              </p>
+              <h2 className="mt-2 text-3xl font-black md:text-4xl">
+                Classificação geral
+              </h2>
+            </div>
+            <p className="max-w-2xl text-slate-400">
+              Ranking automático com base nos resultados registados no Supabase.
+            </p>
+          </div>
+
+          <div className="overflow-hidden rounded-[28px] border border-white/10 bg-slate-900/70 shadow-2xl">
+            <div className="grid grid-cols-12 border-b border-white/10 bg-white/5 px-6 py-4 text-sm font-semibold text-slate-300">
+              <div className="col-span-2 md:col-span-1">Pos.</div>
+              <div className="col-span-5 md:col-span-4">Piloto</div>
+              <div className="hidden md:col-span-2 md:block">N.º</div>
+              <div className="hidden md:col-span-2 md:block">Vitórias</div>
+              <div className="hidden md:col-span-1 md:block">Pódios</div>
+              <div className="col-span-5 text-right md:col-span-2">Pontos</div>
+            </div>
+
+            {typedStandings.map((row, index) => (
+              <div
+                key={row.pilot_id}
+                className="grid grid-cols-12 items-center border-b border-white/5 px-6 py-4 text-sm last:border-b-0"
+              >
+                <div className="col-span-2 font-bold text-white md:col-span-1">
+                  <span
+                    className={`inline-flex h-8 w-8 items-center justify-center rounded-full ${
+                      index === 0
+                        ? "bg-yellow-500/20 text-yellow-300"
+                        : index === 1
+                        ? "bg-slate-300/20 text-slate-200"
+                        : index === 2
+                        ? "bg-orange-700/20 text-orange-300"
+                        : "bg-white/5 text-slate-300"
+                    }`}
+                  >
+                    {row.standing_position}
+                  </span>
+                </div>
+
+                <div className="col-span-5 md:col-span-4">
+                  <div className="font-semibold">{row.full_name}</div>
+                  <div className="text-xs text-slate-400 md:hidden">
+                    {row.team_name}
+                  </div>
+                </div>
+
+                <div className="hidden text-slate-300 md:col-span-2 md:block">
+                  #{row.kart_number ?? "—"}
+                </div>
+                <div className="hidden text-slate-300 md:col-span-2 md:block">
+                  {row.wins}
+                </div>
+                <div className="hidden text-slate-300 md:col-span-1 md:block">
+                  {row.podiums}
+                </div>
+                <div className="col-span-5 text-right text-lg font-black text-orange-300 md:col-span-2">
+                  {row.total_points}
+                </div>
+              </div>
+            ))}
+
+            {typedStandings.length === 0 && (
+              <div className="px-6 py-10 text-slate-400">
+                Ainda não existem resultados suficientes para mostrar a
+                classificação.
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+    </main>
   );
 }
