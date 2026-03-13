@@ -219,6 +219,33 @@ export default function AdminPage() {
     return new Map(stages.map((stage) => [stage.id, stage]));
   }, [stages]);
 
+    async function resetChampionship() {
+    const confirmed = window.confirm(
+      "Tens a certeza que queres apagar todas as etapas e todos os resultados do campeonato? Esta acção não pode ser desfeita."
+    );
+
+    if (!confirmed || !championship) return;
+
+    setBusyKey("championship-reset");
+    setMessage(null);
+    setErrorMessage(null);
+
+    const { error } = await supabase
+      .from("stages")
+      .delete()
+      .eq("championship_id", championship.id);
+
+    if (error) {
+      setErrorMessage(`Erro ao fazer reset do campeonato: ${error.message}`);
+      setBusyKey(null);
+      return;
+    }
+
+    setMessage("Campeonato reiniciado com sucesso.");
+    await loadData();
+    setBusyKey(null);
+  }
+
   async function handleCreatePilot(e: FormEvent) {
     e.preventDefault();
     if (!championship) return;
@@ -474,13 +501,23 @@ export default function AdminPage() {
               )}
             </div>
 
-            <div className="flex flex-col items-stretch gap-3 sm:flex-row">
-              <a
-                href="/"
-                className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 font-semibold text-white transition hover:bg-white/10"
-              >
-                Voltar à homepage
-              </a>
+             <div className="flex flex-col items-stretch gap-3 sm:flex-row">
+             <a
+               href="/"
+               className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 font-semibold text-white transition hover:bg-white/10"
+             >
+               HOMEPAGE
+             </a>
+           
+             <button
+               onClick={resetChampionship}
+               disabled={busyKey === "championship-reset"}
+               className="rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 font-semibold text-red-300 transition hover:bg-red-500/20 disabled:opacity-50"
+             >
+               {busyKey === "championship-reset"
+                 ? "A reiniciar..."
+                 : "Reset campeonato"}
+             </button>
 
               <div className="grid grid-cols-3 gap-3">
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
