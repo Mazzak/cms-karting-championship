@@ -907,46 +907,48 @@ export default function AdminPage() {
                             {getStatusLabel(stage.status)}
                           </span>
                         </div>
-
-               <div className="mt-4 flex flex-wrap gap-2">
-  {(
-    [
-      "draft",
-      "scheduled",
-      "completed",
-      "cancelled",
-    ] as Stage["status"][]
-  ).map((status) => (
-    <button
-      key={status}
-      onClick={() => updateStageStatus(stage.id, status)}
-      disabled={
-        busyKey === `stage-${stage.id}` ||
-        stage.status === status ||
-        busyKey === `stage-delete-${stage.id}`
-      }
-      className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition ${
-        stage.status === status
-          ? "bg-orange-500 text-white"
-          : "border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"
-      } disabled:opacity-50`}
-    >
-      {busyKey === `stage-${stage.id}` && stage.status !== status
-        ? "A guardar..."
-        : getStatusLabel(status)}
-    </button>
-  ))}
-
-  <button
-    onClick={() => deleteStage(stage.id)}
-    disabled={busyKey === `stage-delete-${stage.id}` || busyKey === `stage-${stage.id}`}
-    className="rounded-xl border border-red-400/20 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-300 transition hover:bg-red-500/20 disabled:opacity-50"
-  >
-    {busyKey === `stage-delete-${stage.id}`
-      ? "A apagar..."
-      : "Apagar etapa"}
-  </button>
-</div>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {(
+                          [
+                            "draft",
+                            "scheduled",
+                            "completed",
+                            "cancelled",
+                          ] as Stage["status"][]
+                        ).map((status) => (
+                          <button
+                            key={status}
+                            onClick={() => updateStageStatus(stage.id, status)}
+                            disabled={
+                              busyKey === `stage-${stage.id}` ||
+                              busyKey === `stage-delete-${stage.id}` ||
+                              stage.status === status
+                            }
+                            className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition ${
+                              stage.status === status
+                                ? "bg-orange-500 text-white"
+                                : "border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"
+                            } disabled:opacity-50`}
+                          >
+                            {busyKey === `stage-${stage.id}` && stage.status !== status
+                              ? "A guardar..."
+                              : getStatusLabel(status)}
+                          </button>
+                        ))}
+                      
+                        <button
+                          onClick={() => deleteStage(stage.id)}
+                          disabled={
+                            busyKey === `stage-delete-${stage.id}` ||
+                            busyKey === `stage-${stage.id}`
+                          }
+                          className="rounded-xl border border-red-400/20 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-300 transition hover:bg-red-500/20 disabled:opacity-50"
+                        >
+                          {busyKey === `stage-delete-${stage.id}`
+                            ? "A apagar..."
+                            : "Apagar etapa"}
+                        </button>
+                      </div>
                       </div>
                     ))
                   )}
